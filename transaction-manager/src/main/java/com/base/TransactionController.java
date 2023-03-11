@@ -33,7 +33,7 @@ public class TransactionController {
 
 
     @PostMapping("/process")
-    public ResponseEntity<String> processTransaction(@RequestBody Transaction transaction) throws IOException, InterruptedException {
+    public ResponseEntity<TransactionResponse> processTransaction(@RequestBody Transaction transaction) throws IOException, InterruptedException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -47,7 +47,7 @@ public class TransactionController {
 
         HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         if(httpResponse.statusCode() == 404){
-            return ResponseEntity.badRequest().body("Transaction was not processed");
+            return ResponseEntity.badRequest().body(new TransactionResponse("Transaction was not processed", "FAILED"));
         }
 
         FraudResponse response = mapper.readValue(httpResponse.body(), FraudResponse.class);
@@ -58,9 +58,9 @@ public class TransactionController {
             template.send("payments", transaction.getTransactionId(), new PaymentRequest(transaction.getIssuerAccountId(),
                     transaction.getReceiverAccountId(), transaction.getAmount()));
 
-            return ResponseEntity.ok("Transaction processed successfully");
+            return ResponseEntity.ok(new TransactionResponse("Transaction processed successfully", "SUCCESS"));
         }
-        return ResponseEntity.ok("Transaction was not processed it was deemed fraudulent");
+        return ResponseEntity.ok(new TransactionResponse("Transaction was not processed it was deemed fraudulent", "FAILED"));
 
 
     }
