@@ -4,6 +4,8 @@ package com.base;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.loadbalancer.ServiceInstanceChooser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +28,8 @@ public class TransactionController {
     private HttpClient client;
     @Autowired
     private KafkaTemplate<String, PaymentRequest> template;
-
+    @Autowired
+    private ServiceInstanceChooser instanceChooser;
     public TransactionController() {
         client = HttpClient.newBuilder().build();
     }
@@ -39,8 +42,12 @@ public class TransactionController {
 
         FraudRequest request = new FraudRequest(transaction.getTransactionId(), transaction.getIssuerId()
                 ,transaction.getReceiverId(), transaction.getAmount());
-        System.out.println(mapper.writeValueAsString(request));
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create("http://localhost:8082/fraud-checker"))
+
+        ServiceInstance instance = instanceChooser.choose("fraud-detector");
+        System.out.println(instance);
+        String url = String.format("%s://%s:%s/fraud-checker", instance.getScheme(),instance.getHost(), instance.getPort());
+
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url))
                         .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request)))
                 .header("Content-type", "application/json")
                         .build();
