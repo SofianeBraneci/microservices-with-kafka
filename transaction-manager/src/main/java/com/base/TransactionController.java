@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
@@ -48,7 +47,6 @@ public class TransactionController {
         if(Objects.isNull(instance)){
             return ResponseEntity.badRequest().body(new TransactionResponse("Transaction was not processed", "FAILED"));
         }
-        System.out.println(instance);
         String url = String.format("%s://%s:%s/fraud-checker", instance.getScheme(),instance.getHost(), instance.getPort());
 
         HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url))
